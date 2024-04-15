@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mysystem.futuresystemhd.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="com.mysystem.futuresystemhd.domain.User">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userAccount" column="user_account" jdbcType="VARCHAR"/>
+            <result property="userPassword" column="user_password" jdbcType="VARCHAR"/>
+            <result property="userName" column="user_name" jdbcType="VARCHAR"/>
+            <result property="userSex" column="user_sex" jdbcType="TINYINT"/>
+            <result property="userAge" column="user_age" jdbcType="TINYINT"/>
+            <result property="email" column="email" jdbcType="VARCHAR"/>
+            <result property="phone" column="phone" jdbcType="VARCHAR"/>
+            <result property="idDelete" column="id_delete" jdbcType="TINYINT"/>
+            <result property="userRole" column="user_role" jdbcType="TINYINT"/>
+            <result property="userAvatar" column="user_avatar" jdbcType="VARCHAR"/>
+            <result property="userTags" column="user_tags" jdbcType="VARCHAR"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_account,user_password,
+        user_name,user_sex,user_age,
+        email,phone,id_delete,
+        user_role,user_avatar,user_tags,
+        create_time,update_time
+    </sql>
+
+
+    <select id="getByName" resultType="com.mysystem.futuresystemhd.domain.User">
+        SELECT * FROM `future-system`.user
+        <where>
+            user_name like concat('%',#{name},'%')
+            <if test="fieldName != null">
+                ORDER BY #{fieldName} #{sort}
+            </if>
+             LIMIT #{currentPage} , #{pageSize}
+        </where>;
+    </select>
+</mapper>

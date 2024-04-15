@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mysystem.futuresystemhd.mapper.UserGroupChatInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.mysystem.futuresystemhd.domain.UserGroupChatInfo">
+            <id property="id" column="id" jdbcType="BIGINT"/>
+            <result property="userId" column="user_id" jdbcType="BIGINT"/>
+            <result property="groupChatId" column="group_chat_id" jdbcType="BIGINT"/>
+            <result property="groupChatName" column="group_chat_name" jdbcType="VARCHAR"/>
+            <result property="authority" column="authority" jdbcType="TINYINT"/>
+            <result property="status" column="status" jdbcType="TINYINT"/>
+            <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+            <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+            <result property="idDelete" column="id_delete" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id,user_id,group_chat_id,
+        groupChat_name,authority,status,
+        create_time,update_time,id_delete
+    </sql>
+</mapper>
