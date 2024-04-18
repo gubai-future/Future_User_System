@@ -17,12 +17,14 @@
             <result property="updateId" column="update_id" jdbcType="BIGINT"/>
             <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
             <result property="isDelete" column="is_delete" jdbcType="TINYINT"/>
+            <result property="disclosure" column="disclosure" jdbcType="TINYINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,name,user_id,
         groupChat_txt,max_people_num,current_people_num,
         status,create_id,create_time,
-        update_id,update_time,is_delete
+        update_id,update_time,is_delete,
+        disclosure
     </sql>
 </mapper>

@@ -6,7 +6,9 @@ public enum AuthorityConstant {
     USER_ORDINARY(0,"普通用户"),
     USER_MEMBER(1,"会员"),
     USER_ADMIN(2,"管理员"),
-    USER_ADMIN_PLUS(3,"超级管理员");
+    USER_ADMIN_PLUS(3,"超级管理员"),
+    GROUP_CHAT_ADMIN(1,"群聊管理员"),
+    GROUP_CHAT_MASTER(2,"群主");
 
 
     private Integer statusId;
@@ -27,7 +29,7 @@ public enum AuthorityConstant {
         return authorityConstant.getStatusId();
     }
 
-    public AuthorityConstant  getByAuthority(Integer statusId){
+    public static AuthorityConstant  getByAuthority(Integer statusId){
         AuthorityConstant[] values = AuthorityConstant.values();
         for (AuthorityConstant value : values) {
             if(value.getStatusId().equals(statusId)){

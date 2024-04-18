@@ -3,6 +3,8 @@ server:
   port: 8080
 
 spring:
+  jackson:
+    time-zone: GMT+8
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root

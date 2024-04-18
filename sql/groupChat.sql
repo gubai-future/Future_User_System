@@ -12,7 +12,8 @@ create table if not exists `group_chat`(
     `create_time` datetime default CURRENT_TIMESTAMP not null comment '创建时间',
     `update_id` bigint not null comment '修改人',
     `update_time` datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '修改时间',
-    `is_delete` tinyint default 0 not null comment '是否删除(0-未删除 1-删除)'
+    `is_delete` tinyint default 0 not null comment '是否删除(0-未删除 1-删除)',
+    `disclosure` tinyint default 0 not null comment '加入设置(0-公开 1-需同意)'
 ) comment '群聊表';
 
 
@@ -27,4 +28,16 @@ create table if not exists `user_group_chat_info`(
     `create_time` datetime default CURRENT_TIMESTAMP not null comment '加入时间',
     `update_time` datetime default CURRENT_TIMESTAMP not null comment '修改时间',
     `id_delete` tinyint default 0 not null comment '是否删除(0-未删除 1-删除)'
-)
+) comment '群聊用户关系表';
+
+-- 群聊审核表
+create table if not exists `group_chat_examine`(
+    `id` bigint primary key auto_increment comment 'id',
+    `user_id` bigint not null  comment '申请人',
+    `group_chat_id` bigint not null comment '群聊id',
+    `examine_id` bigint default null comment '审核人',
+    `status` tinyint default 0 not null comment '审核状态(0-未审核 1-同意 2-不同意 3-过时)',
+    `create_time` datetime default CURRENT_TIMESTAMP not null comment '创建时间',
+    `update_time` datetime default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '修改时间',
+    `is_delete` tinyint default 0 not null comment '是否删除(0-未删除 1-删除)'
+)comment '群聊审核表';

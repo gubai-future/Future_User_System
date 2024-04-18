@@ -76,6 +76,11 @@ public class GroupChat implements Serializable {
      */
     private Integer isDelete;
 
+    /**
+     * 加入设置(0-公开 1-需同意)
+     */
+    private Integer disclosure;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

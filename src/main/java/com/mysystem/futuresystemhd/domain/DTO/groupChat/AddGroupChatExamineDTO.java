@@ -9,27 +9,28 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 修改群聊请求体
- * @TableName groupChat
+ * 新增群聊审核请求体
+ * @TableName group_chat_examine
  */
-@TableName(value ="group_chat")
+@TableName(value ="group_chat_examine")
 @Data
-public class UpdateGroupChatDTO implements Serializable {
-    /**
-     * id
-     */
-    @TableId(type = IdType.AUTO)
-    private Long id;
+public class AddGroupChatExamineDTO implements Serializable {
+
 
     /**
-     * 群聊名
+     * 申请人
      */
-    private String name;
+    private Long userId;
 
     /**
-     * 群聊介绍
+     * 群聊id
      */
-    private String groupChatTxt;
+    private Long groupChatId;
+
+    /**
+     * 申请留言
+     */
+    private String examineText;
 
 
 
