@@ -1,10 +1,12 @@
 package com.mysystem.futuresystemhd;
 
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+@EnableRabbit
 @SpringBootApplication
 public class FutureSystemHdApplication implements WebMvcConfigurer {
 

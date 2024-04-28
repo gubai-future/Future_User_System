@@ -9,6 +9,7 @@ public enum ErrorCode {
     REQUEST_IS_ERROR(40005,"请求失败",""),
     REGISTER_ERROR(40006,"注册失败",""),
     LOGIN_ERROR(40007,"登录失败",""),
+    SEND_ERROR(40008,"发送失败",""),
     SYSTEM_IS_ERROR(50000,"系统内部错误","");
 
     /**

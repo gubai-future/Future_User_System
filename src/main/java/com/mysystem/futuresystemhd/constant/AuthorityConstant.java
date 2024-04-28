@@ -8,7 +8,9 @@ public enum AuthorityConstant {
     USER_ADMIN(2,"管理员"),
     USER_ADMIN_PLUS(3,"超级管理员"),
     GROUP_CHAT_ADMIN(1,"群聊管理员"),
-    GROUP_CHAT_MASTER(2,"群主");
+    GROUP_CHAT_MASTER(2,"群主"),
+    GROUP_CHAT_PUBLIC(0,"公开"),
+    GROUP_CHAT_PRIVATE(1,"私密");
 
 
     private Integer statusId;
