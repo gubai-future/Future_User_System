@@ -7,13 +7,14 @@ import com.mysystem.futuresystemhd.common.Result;
 import com.mysystem.futuresystemhd.constant.CookieConstant;
 import com.mysystem.futuresystemhd.constant.UserConstant;
 import com.mysystem.futuresystemhd.domain.DTO.*;
+import com.mysystem.futuresystemhd.domain.DTO.email.EmailDTO;
+import com.mysystem.futuresystemhd.domain.DTO.email.EmailLoginCaptchaDTO;
+import com.mysystem.futuresystemhd.domain.DTO.email.EmailLoginDTO;
 import com.mysystem.futuresystemhd.domain.VO.UserVO;
 import com.mysystem.futuresystemhd.exception.BusinessException;
 import com.mysystem.futuresystemhd.service.UserService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiImplicitParam;
-import io.swagger.annotations.ApiImplicitParams;
-import io.swagger.annotations.ApiOperation;
+import com.mysystem.futuresystemhd.utils.EmailUtil;
+import io.swagger.annotations.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -23,15 +24,20 @@ import javax.security.auth.login.LoginContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.websocket.server.PathParam;
 import java.util.List;
+import java.util.regex.Pattern;
 
 @RestController
 @RequestMapping("/user")
 @Slf4j
 @Api(tags = "用户接口")
+@CrossOrigin
 public class UserController {
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private EmailUtil emailUtil;
 
     /**
      * 用户注册
@@ -54,6 +60,26 @@ public class UserController {
         return Result.success(userVO);
     }
 
+
+    @ApiOperation("注册邮箱验证码")
+    @PostMapping("/email/captcha/register")
+    public Result<Boolean> captchaCode(@RequestBody EmailDTO emailDTO){
+        if(emailDTO == null){
+            throw new BusinessException(ErrorCode.REQUEST_IS_NULL);
+        }
+        String email = emailDTO.getEmail();
+        boolean emailMatcher = Pattern.compile(UserConstant.USER_EMAIL_CHECK).matcher(email).find();
+        if(!emailMatcher){
+            throw new BusinessException(ErrorCode.SEND_EMAIL_ERROR,"邮箱格式错误");
+        }
+        String emailCaptcha = emailUtil.sendRegisterEmail(email);
+
+        if(StringUtils.isBlank(emailCaptcha)){
+            return Result.success(false);
+        }
+
+        return Result.success(true);
+    }
 
     /**
      * 登录
@@ -137,6 +163,8 @@ public class UserController {
 
         return Result.success(updateResult);
     }
+
+
 
 
     /**
@@ -270,6 +298,60 @@ public class UserController {
         return Result.success(boo);
     }
 
+    /**
+     * 邮箱登录
+     * @param emailLoginDTO
+     * @return
+     */
+    @ApiOperation("邮箱登录")
+    @PostMapping("/email/login")
+    public Result<UserVO> emailLogin(@RequestBody EmailLoginDTO emailLoginDTO,HttpServletRequest request){
+        if(emailLoginDTO == null){
+            throw new BusinessException(ErrorCode.REQUEST_IS_NULL);
+        }
+
+        UserVO userVO = userService.emailLogin(emailLoginDTO,request);
+
+        return Result.success(userVO);
+    }
+
+    @ApiOperation("发送邮箱登录验证码")
+    @PostMapping("/email/captcha/login")
+    public Result<Boolean> emailLoginCaptcha(@RequestBody EmailDTO emailDTO){
+        if(emailDTO == null){
+            throw new BusinessException(ErrorCode.REQUEST_IS_NULL);
+        }
+
+        String email = emailDTO.getEmail();
+
+        boolean emailResult = Pattern.compile(UserConstant.USER_EMAIL_CHECK).matcher(email).find();
+
+        if(!emailResult){
+            throw new BusinessException(ErrorCode.SEND_EMAIL_ERROR,"邮箱格式错误");
+        }
+
+        String emailCaptcha = emailUtil.sendLoginEmail(email);
+
+        if(StringUtils.isBlank(emailCaptcha)){
+            return Result.success(false);
+        }
+
+        return Result.success(true);
+
+    }
+
+
+    @ApiOperation("邮箱短信登录")
+    @PostMapping("/email/login/captcha")
+    public Result<UserVO> emailLoginEmail(@RequestBody EmailLoginCaptchaDTO emailLoginCaptchaDTO,HttpServletRequest request){
+        if(emailLoginCaptchaDTO == null){
+            throw new BusinessException(ErrorCode.REQUEST_IS_NULL);
+        }
+
+        UserVO userVO = userService.emailLoginCaptcha(emailLoginCaptchaDTO,request);
+
+        return Result.success(userVO);
+    }
 
 
 }

@@ -10,6 +10,7 @@ public enum ErrorCode {
     REGISTER_ERROR(40006,"注册失败",""),
     LOGIN_ERROR(40007,"登录失败",""),
     SEND_ERROR(40008,"发送失败",""),
+    SEND_EMAIL_ERROR(40009,"邮件发送失败",""),
     SYSTEM_IS_ERROR(50000,"系统内部错误","");
 
     /**

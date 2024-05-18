@@ -13,7 +13,7 @@
             <result property="userAge" column="user_age" jdbcType="TINYINT"/>
             <result property="email" column="email" jdbcType="VARCHAR"/>
             <result property="phone" column="phone" jdbcType="VARCHAR"/>
-            <result property="idDelete" column="id_delete" jdbcType="TINYINT"/>
+            <result property="isDelete" column="id_delete" jdbcType="TINYINT"/>
             <result property="userRole" column="user_role" jdbcType="TINYINT"/>
             <result property="userAvatar" column="user_avatar" jdbcType="VARCHAR"/>
             <result property="userTags" column="user_tags" jdbcType="VARCHAR"/>
@@ -24,7 +24,7 @@
     <sql id="Base_Column_List">
         id,user_account,user_password,
         user_name,user_sex,user_age,
-        email,phone,id_delete,
+        email,phone,is_delete,
         user_role,user_avatar,user_tags,
         create_time,update_time
     </sql>

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * 消息返回封装类
  */
 @Data
-public class MessageResult implements Serializable {
+public class UserMessageResult implements Serializable {
 
     /**
      * 是否为系统消息

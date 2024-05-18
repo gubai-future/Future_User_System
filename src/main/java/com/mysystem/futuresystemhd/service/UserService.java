@@ -1,6 +1,8 @@
 package com.mysystem.futuresystemhd.service;
 
 import com.mysystem.futuresystemhd.domain.DTO.*;
+import com.mysystem.futuresystemhd.domain.DTO.email.EmailLoginCaptchaDTO;
+import com.mysystem.futuresystemhd.domain.DTO.email.EmailLoginDTO;
 import com.mysystem.futuresystemhd.domain.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.mysystem.futuresystemhd.domain.VO.UserVO;
@@ -127,4 +129,27 @@ public interface UserService extends IService<User> {
      * @return
      */
     List<UserVO> queryAll(PageDTO pageDTO);
+
+    /**
+     * 获取全部用户id
+     * @return
+     */
+    List<Long> queryAllUserId();
+
+    /**
+     * 邮箱登录
+     *
+     * @param emailLoginDTO
+     * @param request
+     * @return
+     */
+    UserVO emailLogin(EmailLoginDTO emailLoginDTO, HttpServletRequest request);
+
+    /**
+     * 邮箱短信登录
+     * @param emailLoginCaptchaDTO
+     * @param request
+     * @return
+     */
+    UserVO emailLoginCaptcha(EmailLoginCaptchaDTO emailLoginCaptchaDTO, HttpServletRequest request);
 }

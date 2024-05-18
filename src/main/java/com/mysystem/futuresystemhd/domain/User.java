@@ -69,7 +69,7 @@ public class User implements Serializable {
     /**
      * 是否删除 0-未删除 1-删除
      */
-    private Integer idDelete;
+    private Integer isDelete;
 
     /**
      * 用户身份 0-普通用户 1-会员 2-管理员 3-超级管理员(唯一)

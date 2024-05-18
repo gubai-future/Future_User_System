@@ -24,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/GroupChat")
 @Api(tags = "群聊相关接口")
+@CrossOrigin
 public class GroupChatController {
 
     @Resource

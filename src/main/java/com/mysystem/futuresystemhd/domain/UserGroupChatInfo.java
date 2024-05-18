@@ -59,7 +59,7 @@ public class UserGroupChatInfo implements Serializable {
     /**
      * 是否删除(0-未删除 1-删除)
      */
-    private Integer idDelete;
+    private Integer isDelete;
 
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;

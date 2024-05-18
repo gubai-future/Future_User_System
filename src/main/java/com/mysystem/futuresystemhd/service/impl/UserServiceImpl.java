@@ -9,6 +9,8 @@ import com.google.gson.reflect.TypeToken;
 import com.mysystem.futuresystemhd.common.ErrorCode;
 import com.mysystem.futuresystemhd.constant.*;
 import com.mysystem.futuresystemhd.domain.DTO.*;
+import com.mysystem.futuresystemhd.domain.DTO.email.EmailLoginCaptchaDTO;
+import com.mysystem.futuresystemhd.domain.DTO.email.EmailLoginDTO;
 import com.mysystem.futuresystemhd.domain.User;
 import com.mysystem.futuresystemhd.domain.VO.UserVO;
 import com.mysystem.futuresystemhd.exception.BusinessException;
@@ -16,28 +18,32 @@ import com.mysystem.futuresystemhd.mapper.UserMapper;
 import com.mysystem.futuresystemhd.service.UserService;
 import com.mysystem.futuresystemhd.utils.AutomaticUtil;
 import com.mysystem.futuresystemhd.utils.EncryptionUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static com.mysystem.futuresystemhd.constant.UserConstant.*;
+
 
 @Service
+@Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
     @Resource
     private UserMapper userMapper;
 
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public UserVO request(RegisterDTO registerDTO) {
@@ -78,17 +84,40 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.REGISTER_ERROR, "用户名重复");
         }
 
-        //邮箱判断
+        //邮箱格式判断
         Matcher UserEmailMatcher = Pattern.compile(UserConstant.USER_EMAIL_CHECK).matcher(email);
         if (!UserEmailMatcher.find()) {
             throw new BusinessException(ErrorCode.REGISTER_ERROR, "邮箱格式错误");
         }
+
+        //邮箱验证码
+        String emailCaptcha = registerDTO.getEmailCaptcha();
+
+        String redisKey = EMAIL_USER_CAPTCHA_REGISTER + email;
+        log.info("这是一个验证码x`"+ redisKey);
+        //邮箱校验
+        String emailCode = stringRedisTemplate.opsForValue().get(redisKey);
+
+        if(StringUtils.isBlank(emailCode)){
+            //如果验证码为空
+            throw new BusinessException(ErrorCode.REGISTER_ERROR,"邮箱验证码为空");
+        }
+
+        //校验验证码
+        String emailCaptchaCheck = emailCode.split("_")[0];
+
+        if(!emailCaptchaCheck.equals(emailCaptcha)){
+            throw new BusinessException(ErrorCode.REGISTER_ERROR,"邮箱验证码错误");
+        }
+
 
         //手机号校验
         Matcher UserPhoneMatcher = Pattern.compile(UserConstant.USER_PHONE_CHECK).matcher(phone);
         if (!UserPhoneMatcher.find()) {
             throw new BusinessException(ErrorCode.REGISTER_ERROR, "手机号格式错误");
         }
+
+        //TODO 手机号验证
 
         User user = new User();
 
@@ -101,7 +130,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         }
         user.setUserAccount(account);
 
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
 
         //加密密码
         user.setUserPassword(EncryptionUtil.EncryptionPassword(user.getUserPassword()));
@@ -109,17 +137,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         //写入数据库
         int insert = userMapper.insert(user);
 
+        if(insert <= 0){
+            throw new BusinessException(ErrorCode.REGISTER_ERROR);
+        }
+
         //获取脱敏数据
         UserVO desensitization = this.desensitization(user);
+
+        stringRedisTemplate.delete(EMAIL_USER_CAPTCHA_REGISTER + email);
 
         return desensitization;
     }
 
     /**
      * 用户脱敏
-     *
-     * @param user
-     * @return
+     * @param user 用户
+     * @return 脱敏数据
      */
     @Override
     public UserVO desensitization(User user) {
@@ -136,9 +169,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 登录
-     * @param loginDTO
-     * @param request
-     * @return
+     * @param loginDTO 登录请求体
+     * @param request request
+     * @return 脱敏登录数据
      */
     @Override
     public UserVO login(LoginDTO loginDTO, HttpServletRequest request) {
@@ -182,12 +215,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.LOGIN_ERROR,"密码错误");
         }
 
-        if(UserConstant.USER_FENGJING.equals(user.getUserRole())){
+        if(UserConstant.USER_SEALING.equals(user.getUserRole())){
             throw new BusinessException(ErrorCode.NOT_AUTHORITY,"被封禁");
         }
 
         UserVO desensitization = this.desensitization(user);
 
+        if(request.getSession().getAttribute(CookieConstant.USER_COOKIE_NAME) != null){
+            //如果存在删除session后重新设置
+            request.getSession().removeAttribute(CookieConstant.USER_COOKIE_NAME);
+        }
         request.getSession().setAttribute(CookieConstant.USER_COOKIE_NAME,desensitization);
 
         return desensitization;
@@ -195,8 +232,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 当前用户
-     * @param request
-     * @return
+     * @param request request
+     * @return 登录脱敏数据
      */
     @Override
     public UserVO current(HttpServletRequest request) {
@@ -210,8 +247,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 是否为管理员(request)
-     * @param request
-     * @return
+     * @param request request
+     * @return 是否是管理员
      */
     @Override
     public boolean isAdmin(HttpServletRequest request) {
@@ -223,17 +260,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.REQUEST_IS_NULL);
         }
 
-        if(userRole.equals(UserConstant.USER_ADMIN)  || userRole.equals(UserConstant.USER_ADMIN_PLUS)){
-            return true;
-        }
-
-        return false;
+        return userRole.equals(UserConstant.USER_ADMIN) || userRole.equals(UserConstant.USER_ADMIN_PLUS);
     }
 
     /**
      * 是否为管理员(用户)
-     * @param userVO
-     * @return
+     * @param userVO 脱敏用户数据
+     * @return 是否是管理员
      */
     @Override
     public boolean isAdmin(UserVO userVO) {
@@ -243,17 +276,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.REQUEST_IS_NULL);
         }
 
-        if(userRole.equals(UserConstant.USER_ADMIN)  || userRole.equals(UserConstant.USER_ADMIN_PLUS) ){
-            return true;
-        }
-
-        return false;
+        return userRole.equals(UserConstant.USER_ADMIN) || userRole.equals(UserConstant.USER_ADMIN_PLUS);
     }
 
     /**
      * 是否为超级管理员
-     * @param userVO
-     * @return
+     * @param userVO 脱敏用户数据
+     * @return 是否为超级管理员
      */
     @Override
     public boolean isAdminPlus(UserVO userVO) {
@@ -273,9 +302,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     /**
      * 用户删除
      *
-     * @param id
-     * @param request
-     * @return
+     * @param id 用户id
+     * @param request request
+     * @return 是否删除
      */
     @Override
     public boolean deleteById(Long id, HttpServletRequest request) {
@@ -292,7 +321,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         //是否为当前用户或者管理员
         Long userId = current.getId();
-        if((id != userId) && (!isAdmin(current))){
+        if((!id.equals(userId)) && (!isAdmin(current))){
             throw new BusinessException(ErrorCode.NOT_AUTHORITY);
         }
 
@@ -303,14 +332,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new BusinessException(ErrorCode.NOT_AUTHORITY);
         }
 
-        /**
-         * 普通管理员不可以删除其他管理员
-         */
+
+         //普通管理员不可以删除其他管理员
         if(isAdmin(current)){
             //如果删除用户是普通管理员
             if(user.getUserRole().equals(UserConstant.USER_ADMIN)){
                 //如果不是当前用户
-                if(current.getId() != user.getId()){
+                if(!Objects.equals(current.getId(), user.getId())){
                     throw new BusinessException(ErrorCode.NOT_AUTHORITY,"不可以删除其他管理员");
                 }
             }
@@ -328,9 +356,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     /**
      * 修改用户
-     * @param userVO
-     * @param loginUser
-     * @return
+     * @param userVO 用户脱敏数据
+     * @param loginUser 登录用户
+     * @return 是否修改
      */
     @Override
     public Boolean updateUser(UserVO userVO, UserVO loginUser) {
@@ -407,14 +435,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         //超级管理员不需要原密码
         if(!isAdminPlus(current)){
-            /**
-             * 旧密码判断
-             */
+
+            //旧密码判断
             String oldPassword = updatePasswordDTO.getOldPassword();
 
-            /**
-             * 加密
-             */
+
+             //加密
             String DigPassword = EncryptionUtil.EncryptionPassword(oldPassword);
 
             Long userPasswordNum = userMapper.selectCount(new QueryWrapper<User>().eq("id", userId).eq("user_password", DigPassword));
@@ -527,9 +553,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     /**
      * 根据名字查询用户
      *
-     * @param name
-     * @param pageDTO
-     * @return
+     * @param name 用户名字
+     * @param pageDTO 分页请求体
+     * @return 用户列表
      */
     @Override
     public List<UserVO> QueryUserByName(String name, PageDTO pageDTO) {
@@ -552,9 +578,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         List<User> userList = userPage.getRecords();
 
-        List<UserVO> userVOList = userList.stream().map(user -> desensitization(user)).collect(Collectors.toList());
-
-        return userVOList;
+        return userList.stream().map(this::desensitization).collect(Collectors.toList());
     }
 
     @Override
@@ -624,7 +648,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         User user = userMapper.selectOne(new QueryWrapper<User>().eq("id", id));
 
         //当前用户是否被封禁
-        if(UserConstant.USER_FENGJING.equals(user.getCloseStatic())){
+        if(UserConstant.USER_SEALING.equals(user.getCloseStatic())){
             throw new BusinessException(ErrorCode.REQUEST_IS_ERROR,"当前用户已封禁");
         }
 
@@ -645,7 +669,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
         UpdateWrapper<User> updateWrapper = new UpdateWrapper<>();
 
-        updateWrapper.set("close_static",UserConstant.USER_FENGJING);
+        updateWrapper.set("close_static",UserConstant.USER_SEALING);
 
         int update = userMapper.update(updateWrapper);
 
@@ -673,6 +697,117 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         List<User> records = userPage.getRecords();
 
         return records.stream().map(this::desensitization).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Long> queryAllUserId() {
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("id");
+
+        List<User> users = userMapper.selectList(queryWrapper);
+
+        return users.stream().map(User::getId).collect(Collectors.toList());
+    }
+
+    @Override
+    public UserVO emailLogin(EmailLoginDTO emailLoginDTO, HttpServletRequest request) {
+        if(emailLoginDTO == null){
+            throw new BusinessException(ErrorCode.REQUEST_IS_NULL);
+        }
+
+        String email = emailLoginDTO.getEmail();
+
+        //邮箱校验
+        boolean emailMatcher = Pattern.compile(USER_EMAIL_CHECK).matcher(email).find();
+        if(!emailMatcher){
+            throw new BusinessException(ErrorCode.LOGIN_ERROR,"邮箱格式错误");
+        }
+
+        //该邮箱是否绑定用户
+        Long emailNum = userMapper.selectCount(new QueryWrapper<User>().eq("email", email));
+
+        if(emailNum <= 0){
+            throw new BusinessException(ErrorCode.LOGIN_ERROR,"登录账号不存在");
+        }
+
+        String userPassword = emailLoginDTO.getUserPassword();
+
+        //加密密码
+        String encryptionPassword = EncryptionUtil.EncryptionPassword(userPassword);
+
+        //校验数据库
+        User user = userMapper.selectOne(new QueryWrapper<User>().eq("email", email).eq("user_password", encryptionPassword));
+
+        //用户状态是否正常
+        Integer closeStatic = user.getCloseStatic();
+
+        if(UserConstant.USER_SEALING.equals(closeStatic)){
+            throw new BusinessException(ErrorCode.NOT_AUTHORITY,"被封禁");
+        }
+
+        //脱敏数据
+        UserVO desensitization = desensitization(user);
+
+        //设置session
+        if(request.getSession().getAttribute(CookieConstant.USER_COOKIE_NAME) != null){
+            //如果存在删除
+            request.getSession().removeAttribute(CookieConstant.USER_COOKIE_NAME);
+        }
+        request.getSession().setAttribute(CookieConstant.USER_COOKIE_NAME,desensitization);
+
+        return desensitization;
+    }
+
+    @Override
+    public UserVO emailLoginCaptcha(EmailLoginCaptchaDTO emailLoginCaptchaDTO, HttpServletRequest request) {
+        if(emailLoginCaptchaDTO == null){
+            throw new BusinessException(ErrorCode.REQUEST_IS_NULL);
+        }
+
+        String email = emailLoginCaptchaDTO.getEmail();
+
+        //邮箱校验
+        boolean emailMatcher = Pattern.compile(USER_EMAIL_CHECK).matcher(email).find();
+        if(!emailMatcher){
+            throw new BusinessException(ErrorCode.LOGIN_ERROR,"邮箱格式错误");
+        }
+
+        //该邮箱是否绑定用户
+        Long emailNum = userMapper.selectCount(new QueryWrapper<User>().eq("email", email));
+
+        if(emailNum <= 0){
+            throw new BusinessException(ErrorCode.LOGIN_ERROR,"登录账号不存在");
+        }
+
+        String emailCaptcha = stringRedisTemplate.opsForValue().get(EMAIL_USER_CAPTCHA_LOGIN + email);
+
+        if(StringUtils.isBlank(emailCaptcha)){
+            //如果邮箱验证码为空
+            throw new BusinessException(ErrorCode.LOGIN_ERROR);
+        }
+
+        String captchaEmail = emailLoginCaptchaDTO.getEmailCaptcha();
+
+        emailCaptcha = emailCaptcha.split("_")[0];
+
+        if(!Objects.equals(emailCaptcha,captchaEmail)){
+            //如果验证码不匹配
+            throw new BusinessException(ErrorCode.LOGIN_ERROR,"验证码错误");
+        }
+
+        User user = userMapper.selectOne(new QueryWrapper<User>().eq("email", email));
+
+        //脱敏
+        UserVO desensitization = desensitization(user);
+
+        if(request.getSession().getAttribute(CookieConstant.USER_COOKIE_NAME) != null){
+            request.getSession().removeAttribute(CookieConstant.USER_COOKIE_NAME);
+        }
+
+        request.getSession().setAttribute(CookieConstant.USER_COOKIE_NAME,desensitization);
+
+        return desensitization;
     }
 
 

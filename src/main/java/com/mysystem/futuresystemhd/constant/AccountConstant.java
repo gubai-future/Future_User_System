@@ -1,6 +1,6 @@
 package com.mysystem.futuresystemhd.constant;
 
-public class AccountConstant {
+public class  AccountConstant {
 
     /**
      * 账户正则表达式

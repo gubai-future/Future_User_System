@@ -1,5 +1,6 @@
 package com.mysystem.futuresystemhd.domain.DTO;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -38,11 +39,20 @@ public class RegisterDTO {
     @ApiModelProperty(value = "邮箱",required = true)
     private String email;
 
+    @ApiModelProperty(value = "邮箱验证码",required = true)
+    private String emailCaptcha;
+
     /**
      * 手机号
      */
     @ApiModelProperty(value = "手机号",required = true)
     private String phone;
+
+    /**
+     * 手机号验证码
+     */
+    @ApiModelProperty(value = "手机号验证码",required = true)
+    private String phoneCaptcha;
 
 
 

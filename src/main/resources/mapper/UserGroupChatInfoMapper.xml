@@ -13,12 +13,12 @@
             <result property="status" column="status" jdbcType="TINYINT"/>
             <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
             <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
-            <result property="idDelete" column="id_delete" jdbcType="TINYINT"/>
+            <result property="isDelete" column="id_delete" jdbcType="TINYINT"/>
     </resultMap>
 
     <sql id="Base_Column_List">
         id,user_id,group_chat_id,
         groupChat_name,authority,status,
-        create_time,update_time,id_delete
+        create_time,update_time,is_delete
     </sql>
 </mapper>

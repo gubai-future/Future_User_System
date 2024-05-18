@@ -1,24 +1,18 @@
-# 应用服务 WEB 访问端口
-server:
-  port: 8080
 
+# 应用服务 WEB 访问端口
 spring:
+  profiles:
+    active: dev
   jackson:
     time-zone: GMT+8
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: '123456'
-    url: jdbc:mysql://localhost:3306/future-system
+    date-format: "yyyy-MM-dd HH:mm:ss"
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
-  redis:
-    host: localhost
-    port: 6379
-    database: 1
-  session:
-    timeout: 43200000 #12小时
+  application:
+    name: future_user_system
+
+
 
 mybatis-plus:
   configuration:
@@ -41,10 +35,12 @@ knife4j:
     version: v1.0
     group:
       test1:
-        group-name: 分组名称
+        group-name: 业务
         api-rule: package
         api-rule-resources:
           - com.mysystem.futuresystemhd.controller
+          - om.mysystem.futuresystemhd.information
+
 
 
 
